@@ -5,7 +5,7 @@ from __future__ import annotations
 from facturacion.errores import ClienteInvalido
 from facturacion.modelos import Cliente
 from facturacion.repositorios.memoria import RepositorioClientes
-from facturacion.utilidades.validaciones import NIT_CONSUMIDOR_FINAL, validar_correo, validar_nit
+from facturacion.utilidades.validaciones import NIT_CONSUMIDOR_FINAL, normalizar_nit, validar_correo, validar_nit
 
 ID_CONSUMIDOR_FINAL = "consumidor-final"
 
@@ -23,6 +23,13 @@ class ServicioClientes:
             raise ClienteInvalido(f"El correo {cliente.correo} no es valido.")
         if self._repo.existe(cliente.id):
             raise ClienteInvalido(f"Ya existe un cliente con id {cliente.id}.")
+
+        existente = self._repo.por_nit(cliente.nit)
+        if existente is not None:
+            raise ClienteInvalido(
+                f"El NIT {cliente.nit} ya esta registrado y pertenece al cliente {existente.nombre} ({existente.id})."
+            )
+
         self._repo.guardar_cliente(cliente)
         return cliente
 

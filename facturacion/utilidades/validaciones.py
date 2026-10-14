@@ -13,6 +13,11 @@ _PESOS_NIT = (3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71)
 NIT_CONSUMIDOR_FINAL = "222222222222"
 
 
+def normalizar_nit(nit: str | None) -> str:
+    """Quita formato del NIT para comparar duplicados sin importar puntos, espacios o guion."""
+    return "".join(ch for ch in (nit or "") if ch.isdigit())
+
+
 def digito_verificacion(nit: str) -> int:
     """Digito de verificacion de un NIT sin guion ni puntos."""
     digitos = [int(d) for d in reversed(nit)]
@@ -23,10 +28,10 @@ def digito_verificacion(nit: str) -> int:
 
 def validar_nit(nit: str) -> bool:
     """Acepta `900123456` o `900123456-8`; si trae digito de verificacion, lo comprueba."""
-    limpio = (nit or "").replace(".", "").replace(" ", "")
+    limpio = normalizar_nit(nit)
     if limpio == NIT_CONSUMIDOR_FINAL:
         return True
-    numero, _, dv = limpio.partition("-")
+    numero, _, dv = (nit or "").replace(".", "").replace(" ", "").partition("-")
     if not numero.isdigit() or not 6 <= len(numero) <= 15:
         return False
     if dv:
