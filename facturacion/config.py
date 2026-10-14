@@ -30,6 +30,19 @@ class Configuracion:
     nit_emisor: str = "900123456"
     razon_social_emisor: str = "Tienda Ejemplo S.A.S."
     remitente_correo: str = "facturacion@tienda.example"
+    # Cuentas contables usadas por la exportacion de ventas.
+    cuenta_caja: str = "110505"
+    cuenta_bancos: str = "111005"
+    cuenta_ingresos: str = "413524"
+    cuenta_iva: str = "240802"
+    cuenta_clientes: str = "130505"
+
+    @classmethod
+    def _leer_cuenta(cls, entorno: Mapping[str, str], nombre: str, por_defecto: str) -> str:
+        valor = entorno.get(nombre, por_defecto)
+        if valor == "" or not valor.isdigit():
+            raise ValueError(f"La variable {nombre} es invalida: debe contener solo digitos.")
+        return valor
 
     @classmethod
     def desde_entorno(cls, entorno: Mapping[str, str] | None = None) -> "Configuracion":
@@ -46,4 +59,9 @@ class Configuracion:
             nit_emisor=e.get("FACTURACION_NIT_EMISOR", base.nit_emisor),
             razon_social_emisor=e.get("FACTURACION_RAZON_SOCIAL", base.razon_social_emisor),
             remitente_correo=e.get("FACTURACION_REMITENTE", base.remitente_correo),
+            cuenta_caja=cls._leer_cuenta(e, "FACTURACION_CUENTA_CAJA", base.cuenta_caja),
+            cuenta_bancos=cls._leer_cuenta(e, "FACTURACION_CUENTA_BANCOS", base.cuenta_bancos),
+            cuenta_ingresos=cls._leer_cuenta(e, "FACTURACION_CUENTA_INGRESOS", base.cuenta_ingresos),
+            cuenta_iva=cls._leer_cuenta(e, "FACTURACION_CUENTA_IVA", base.cuenta_iva),
+            cuenta_clientes=cls._leer_cuenta(e, "FACTURACION_CUENTA_CLIENTES", base.cuenta_clientes),
         )
