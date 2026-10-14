@@ -5,7 +5,7 @@ from __future__ import annotations
 from facturacion.errores import ClienteInvalido
 from facturacion.modelos import Cliente
 from facturacion.repositorios.memoria import RepositorioClientes
-from facturacion.utilidades.validaciones import NIT_CONSUMIDOR_FINAL, normalizar_nit, validar_correo, validar_nit
+from facturacion.utilidades.validaciones import NIT_CONSUMIDOR_FINAL, validar_correo, validar_nit
 
 ID_CONSUMIDOR_FINAL = "consumidor-final"
 
@@ -17,10 +17,6 @@ class ServicioClientes:
     def registrar(self, cliente: Cliente) -> Cliente:
         if not cliente.nombre.strip():
             raise ClienteInvalido("El cliente necesita un nombre.")
-        if not validar_nit(cliente.nit):
-            raise ClienteInvalido(f"El NIT {cliente.nit} no es valido.")
-        if cliente.correo and not validar_correo(cliente.correo):
-            raise ClienteInvalido(f"El correo {cliente.correo} no es valido.")
         if self._repo.existe(cliente.id):
             raise ClienteInvalido(f"Ya existe un cliente con id {cliente.id}.")
 
@@ -29,6 +25,10 @@ class ServicioClientes:
             raise ClienteInvalido(
                 f"El NIT {cliente.nit} ya esta registrado y pertenece al cliente {existente.nombre} ({existente.id})."
             )
+        if not validar_nit(cliente.nit):
+            raise ClienteInvalido(f"El NIT {cliente.nit} no es valido.")
+        if cliente.correo and not validar_correo(cliente.correo):
+            raise ClienteInvalido(f"El correo {cliente.correo} no es valido.")
 
         self._repo.guardar_cliente(cliente)
         return cliente
