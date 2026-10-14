@@ -5,7 +5,12 @@ from __future__ import annotations
 from facturacion.errores import ClienteInvalido
 from facturacion.modelos import Cliente
 from facturacion.repositorios.memoria import RepositorioClientes
-from facturacion.utilidades.validaciones import NIT_CONSUMIDOR_FINAL, validar_correo, validar_nit
+from facturacion.utilidades.validaciones import (
+    NIT_CONSUMIDOR_FINAL,
+    normalizar_nit,
+    validar_correo,
+    validar_nit,
+)
 
 ID_CONSUMIDOR_FINAL = "consumidor-final"
 
@@ -17,12 +22,19 @@ class ServicioClientes:
     def registrar(self, cliente: Cliente) -> Cliente:
         if not cliente.nombre.strip():
             raise ClienteInvalido("El cliente necesita un nombre.")
+        if self._repo.existe(cliente.id):
+            raise ClienteInvalido(f"Ya existe un cliente con id {cliente.id}.")
+
+        existente = self.buscar_por_nit(cliente.nit)
+        if existente is not None:
+            raise ClienteInvalido(
+                f"El NIT {cliente.nit} ya esta registrado y pertenece al cliente {existente.nombre} ({existente.id})."
+            )
         if not validar_nit(cliente.nit):
             raise ClienteInvalido(f"El NIT {cliente.nit} no es valido.")
         if cliente.correo and not validar_correo(cliente.correo):
             raise ClienteInvalido(f"El correo {cliente.correo} no es valido.")
-        if self._repo.existe(cliente.id):
-            raise ClienteInvalido(f"Ya existe un cliente con id {cliente.id}.")
+
         self._repo.guardar_cliente(cliente)
         return cliente
 
@@ -33,7 +45,8 @@ class ServicioClientes:
         return cliente
 
     def buscar_por_nit(self, nit: str) -> Cliente | None:
-        return self._repo.por_nit(nit)
+        nit_normalizado = normalizar_nit(nit)
+        return self._repo.por_nit(nit_normalizado)
 
     def consumidor_final(self) -> Cliente:
         """El cliente generico para ventas sin datos del comprador."""

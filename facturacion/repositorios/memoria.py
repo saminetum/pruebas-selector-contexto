@@ -11,6 +11,7 @@ from typing import Generic, Iterator, TypeVar
 
 from facturacion.errores import FacturaNoEncontrada
 from facturacion.modelos import Cliente, EstadoFactura, Factura, NotaCredito, Producto
+from facturacion.utilidades.validaciones import normalizar_nit
 
 T = TypeVar("T")
 
@@ -48,7 +49,8 @@ class RepositorioClientes(RepositorioMemoria[Cliente]):
         self.guardar(cliente.id, cliente)
 
     def por_nit(self, nit: str) -> Cliente | None:
-        return next((c for c in self.listar() if c.nit == nit), None)
+        nit_normalizado = normalizar_nit(nit)
+        return next((c for c in self.listar() if normalizar_nit(c.nit) == nit_normalizado), None)
 
 
 class RepositorioProductos(RepositorioMemoria[Producto]):
