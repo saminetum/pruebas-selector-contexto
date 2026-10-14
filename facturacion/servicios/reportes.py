@@ -6,7 +6,7 @@ from collections import Counter, defaultdict
 from datetime import date
 from decimal import Decimal
 
-from facturacion.modelos import EstadoFactura, Factura
+from facturacion.modelos import EstadoFactura, Factura, MedioPago
 from facturacion.repositorios.memoria import RepositorioFacturas
 from facturacion.servicios.calculos import desglose_impuestos
 from facturacion.utilidades.dinero import redondear, sumar
@@ -50,9 +50,18 @@ def impuestos_por_tasa(facturas: RepositorioFacturas, desde: date, hasta: date) 
 
 
 def cierre_de_caja(facturas: RepositorioFacturas, dia: date) -> dict[str, Decimal]:
-    """Lo cobrado en el dia por medio de pago: lo que el cajero debe entregar."""
-    por_medio: dict[str, Decimal] = defaultdict(lambda: Decimal("0"))
-    for factura in _validas(facturas.del_dia(dia)):
+    """Lo cobrado en el dia por medio de pago: lo que el cajero debe entregar.
+
+    El cierre se calcula por la fecha real del pago, no por la fecha de emision de
+    la factura. Las facturas anuladas no aportan importes.
+    """
+    por_medio: dict[MedioPago, Decimal] = defaultdict(lambda: Decimal("0"))
+    for factura in _validas(facturas.listar()):
         for pago in factura.pagos:
-            por_medio[pago.medio.value] += pago.monto
-    return {medio: redondear(valor) for medio, valor in por_medio.items()}
+            if pago.fecha.date() == dia:
+                por_medio[pago.medio] += pago.monto
+    return {
+        MedioPago.EFECTIVO.value: redondear(por_medio[MedioPago.EFECTIVO]),
+        MedioPago.TARJETA.value: redondear(por_medio[MedioPago.TARJETA]),
+        MedioPago.TRANSFERENCIA.value: redondear(por_medio[MedioPago.TRANSFERENCIA]),
+    }
