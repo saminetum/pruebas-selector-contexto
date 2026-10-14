@@ -16,8 +16,7 @@ from facturacion.modelos import EstadoFactura, Factura, MedioPago
 from facturacion.repositorios.memoria import RepositorioFacturas
 from facturacion.utilidades.dinero import redondear
 
-# Valores historicos por defecto, expuestos para compatibilidad con el resto del codigo
-# y para que la exportacion siga funcionando aun si no se inyecta Configuracion.
+# Valores historicos por defecto, expuestos para compatibilidad con el resto del codigo.
 CUENTA_CAJA = Configuracion.cuenta_caja
 CUENTA_BANCOS = Configuracion.cuenta_bancos
 CUENTA_INGRESOS = Configuracion.cuenta_ingresos
@@ -27,17 +26,12 @@ CUENTA_CLIENTES = Configuracion.cuenta_clientes
 COLUMNAS = ("fecha", "comprobante", "cuenta", "tercero", "debito", "credito")
 
 
-def _config_or_default(config: Configuracion | None) -> Configuracion:
-    return config if config is not None else Configuracion()
-
-
 def _cuenta_de_cobro(factura: Factura, medio: MedioPago, config: Configuracion) -> str:
     return config.cuenta_caja if medio == MedioPago.EFECTIVO else config.cuenta_bancos
 
 
-def asientos(factura: Factura, *, config: Configuracion | None = None) -> list[dict[str, str]]:
+def asientos(factura: Factura, *, config: Configuracion) -> list[dict[str, str]]:
     """Las lineas contables de una factura. Debitos y creditos siempre cuadran."""
-    config = _config_or_default(config)
     fecha = factura.fecha_emision.date().isoformat() if factura.fecha_emision else ""
     base = {"fecha": fecha, "comprobante": factura.identificador, "tercero": factura.cliente.nit}
     filas = []
@@ -56,9 +50,8 @@ def asientos(factura: Factura, *, config: Configuracion | None = None) -> list[d
     return filas
 
 
-def exportar_csv(facturas: RepositorioFacturas, desde: date, hasta: date, *, config: Configuracion | None = None) -> str:
+def exportar_csv(facturas: RepositorioFacturas, desde: date, hasta: date, *, config: Configuracion) -> str:
     """CSV con los asientos de las facturas timbradas o pagadas del periodo."""
-    config = _config_or_default(config)
     salida = io.StringIO()
     escritor = csv.DictWriter(salida, fieldnames=COLUMNAS, lineterminator="\n")
     escritor.writeheader()
