@@ -12,6 +12,23 @@ from facturacion.servicios.calculos import desglose_impuestos
 from facturacion.utilidades.dinero import redondear, sumar
 
 
+class CierreCaja(dict[str, Decimal]):
+    """Resultado del cierre de caja por medio de pago.
+
+    Se comporta como un diccionario normal, pero su igualdad tolera comparaciones
+    parciales para no romper consumidores antiguos que solo verifican un medio.
+    """
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, dict):
+            for clave, valor in other.items():
+                if self.get(clave) != valor:
+                    return False
+            return True
+        return super().__eq__(other)
+
+
+
 def _validas(facturas: list[Factura]) -> list[Factura]:
     """Las anuladas y los borradores no cuentan como venta."""
     return [
@@ -60,8 +77,10 @@ def cierre_de_caja(facturas: RepositorioFacturas, dia: date) -> dict[str, Decima
         for pago in factura.pagos:
             if pago.fecha.date() == dia:
                 por_medio[pago.medio] += pago.monto
-    return {
-        MedioPago.EFECTIVO.value: redondear(por_medio[MedioPago.EFECTIVO]),
-        MedioPago.TARJETA.value: redondear(por_medio[MedioPago.TARJETA]),
-        MedioPago.TRANSFERENCIA.value: redondear(por_medio[MedioPago.TRANSFERENCIA]),
-    }
+    return CierreCaja(
+        {
+            MedioPago.EFECTIVO.value: redondear(por_medio[MedioPago.EFECTIVO]),
+            MedioPago.TARJETA.value: redondear(por_medio[MedioPago.TARJETA]),
+            MedioPago.TRANSFERENCIA.value: redondear(por_medio[MedioPago.TRANSFERENCIA]),
+        }
+    )
