@@ -42,27 +42,35 @@ class ServicioDevoluciones:
     def devolver(self, identificador: str, items: list[ItemDevuelto], motivo: str) -> NotaCredito:
         factura = self._facturas.obtener_factura(identificador)
         vendidas = {linea.producto.codigo: linea for linea in factura.lineas}
-        lineas_devueltas: list[LineaFactura] = []
+
+        acumuladas: dict[str, int] = {}
         for item in items:
-            linea = vendidas.get(item.codigo)
-            if linea is None:
-                raise FacturaInvalida(f"{item.codigo} no esta en la factura {identificador}.")
-            ya = self._devuelto.get((identificador, item.codigo), 0)
-            if item.cantidad <= 0 or ya + item.cantidad > linea.cantidad:
+            if item.cantidad <= 0:
                 raise FacturaInvalida(
-                    f"No se pueden devolver {item.cantidad} de {item.codigo}: se vendieron "
+                    f"No se pueden devolver {item.cantidad} de {item.codigo}: la cantidad debe ser mayor que cero."
+                )
+            acumuladas[item.codigo] = acumuladas.get(item.codigo, 0) + item.cantidad
+
+        lineas_devueltas: list[LineaFactura] = []
+        for codigo, cantidad in acumuladas.items():
+            linea = vendidas.get(codigo)
+            if linea is None:
+                raise FacturaInvalida(f"{codigo} no esta en la factura {identificador}.")
+            ya = self._devuelto.get((identificador, codigo), 0)
+            if ya + cantidad > linea.cantidad:
+                raise FacturaInvalida(
+                    f"No se pueden devolver {cantidad} de {codigo}: se vendieron "
                     f"{linea.cantidad} y ya se devolvieron {ya}."
                 )
-            # El descuento se reparte en proporcion a lo devuelto.
-            proporcion = linea.descuento * item.cantidad / linea.cantidad
-            lineas_devueltas.append(LineaFactura(linea.producto, item.cantidad, proporcion))
+            proporcion = linea.descuento * cantidad / linea.cantidad
+            lineas_devueltas.append(LineaFactura(linea.producto, cantidad, proporcion))
 
         monto = sumar(importe_neto(l) + impuesto_linea(l) for l in lineas_devueltas)
         nota = self._notas.emitir(factura, monto, motivo)
         self._inventario.liberar(lineas_devueltas)
-        for item in items:
-            clave = (identificador, item.codigo)
-            self._devuelto[clave] = self._devuelto.get(clave, 0) + item.cantidad
+        for codigo, cantidad in acumuladas.items():
+            clave = (identificador, codigo)
+            self._devuelto[clave] = self._devuelto.get(clave, 0) + cantidad
         self._auditoria.registrar(
             "devolucion", factura=identificador, nota=f"{nota.serie}-{nota.folio}", monto=str(monto)
         )
