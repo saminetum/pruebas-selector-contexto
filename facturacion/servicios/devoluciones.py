@@ -51,7 +51,7 @@ class ServicioDevoluciones:
                 )
             acumuladas[item.codigo] = acumuladas.get(item.codigo, 0) + item.cantidad
 
-        lineas_devueltas: list[LineaFactura] = []
+        lineas_validadas: list[LineaFactura] = []
         for codigo, cantidad in acumuladas.items():
             linea = vendidas.get(codigo)
             if linea is None:
@@ -63,11 +63,17 @@ class ServicioDevoluciones:
                     f"{linea.cantidad} y ya se devolvieron {ya}."
                 )
             proporcion = linea.descuento * cantidad / linea.cantidad
-            lineas_devueltas.append(LineaFactura(linea.producto, cantidad, proporcion))
+            lineas_validadas.append(LineaFactura(linea.producto, cantidad, proporcion))
 
-        monto = sumar(importe_neto(l) + impuesto_linea(l) for l in lineas_devueltas)
+        lineas_reingreso: list[LineaFactura] = []
+        for item in items:
+            linea = vendidas[item.codigo]
+            proporcion = linea.descuento * item.cantidad / linea.cantidad
+            lineas_reingreso.append(LineaFactura(linea.producto, item.cantidad, proporcion))
+
+        monto = sumar(importe_neto(l) + impuesto_linea(l) for l in lineas_validadas)
         nota = self._notas.emitir(factura, monto, motivo)
-        self._inventario.liberar(lineas_devueltas)
+        self._inventario.liberar(lineas_reingreso)
         for codigo, cantidad in acumuladas.items():
             clave = (identificador, codigo)
             self._devuelto[clave] = self._devuelto.get(clave, 0) + cantidad
