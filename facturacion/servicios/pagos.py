@@ -14,14 +14,21 @@ from facturacion.errores import EstadoInvalido, PagoRechazado
 from facturacion.modelos import EstadoFactura, Factura, MedioPago, Pago
 from facturacion.repositorios.memoria import RepositorioFacturas
 from facturacion.servicios.auditoria import RegistroAuditoria
+from facturacion.servicios.notificaciones import ServicioNotificaciones
 from facturacion.utilidades.dinero import a_decimal, redondear
 from facturacion.utilidades.fechas import ahora
 
 
 class ServicioPagos:
-    def __init__(self, facturas: RepositorioFacturas, auditoria: RegistroAuditoria) -> None:
+    def __init__(
+        self,
+        facturas: RepositorioFacturas,
+        auditoria: RegistroAuditoria,
+        notificaciones: ServicioNotificaciones | None = None,
+    ) -> None:
         self._facturas = facturas
         self._auditoria = auditoria
+        self._notificaciones = notificaciones
 
     def registrar_pago(
         self,
@@ -57,4 +64,6 @@ class ServicioPagos:
         self._auditoria.registrar(
             "pago_registrado", factura=identificador, medio=medio.value, monto=str(aplicado)
         )
+        if factura.estado == EstadoFactura.PAGADA and self._notificaciones is not None:
+            self._notificaciones.enviar_comprobante(factura)
         return factura, cambio
