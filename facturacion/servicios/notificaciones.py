@@ -8,8 +8,8 @@ pagada.
 from __future__ import annotations
 
 from facturacion.config import Configuracion
-from facturacion.documentos.pdf import generar_pdf
-from facturacion.documentos.xml import generar_xml
+from facturacion.documentos.pdf import generar_pdf, nombre_archivo_pdf
+from facturacion.documentos.xml import generar_xml, nombre_archivo_xml
 from facturacion.errores import ErrorCorreo
 from facturacion.integraciones.correo import ClienteCorreo
 from facturacion.modelos import Factura
@@ -52,8 +52,8 @@ class ServicioNotificaciones:
                 f"El correo del comprador {factura.cliente.correo} no es valido."
             )
         adjuntos = {
-            "pdf": generar_pdf(factura, self._config),
-            "xml": generar_xml(factura, self._config).encode("utf-8"),
+            nombre_archivo_pdf(factura): generar_pdf(factura, self._config),
+            nombre_archivo_xml(factura): generar_xml(factura, self._config).encode("utf-8"),
         }
         self.enviar(
             factura.cliente.correo,
