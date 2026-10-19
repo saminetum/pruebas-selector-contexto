@@ -60,6 +60,7 @@ def construir_aplicacion(
     facturas = RepositorioFacturas()
     auditoria = RegistroAuditoria()
     inventario = ServicioInventario(RepositorioProductos())
+    notificaciones = ServicioNotificaciones(correo, config)
 
     return Aplicacion(
         config=config,
@@ -72,10 +73,10 @@ def construir_aplicacion(
             facturas, GeneradorFolios(config.serie_facturas), inventario, auditoria, config
         ),
         timbrado=ServicioTimbrado(servicio_impuestos, facturas, auditoria, config),
-        pagos=ServicioPagos(facturas, auditoria),
+        pagos=ServicioPagos(facturas, auditoria, notificaciones),
         anulacion=ServicioAnulacion(facturas, inventario, servicio_impuestos, auditoria, config),
         notas_credito=ServicioNotasCredito(
             RepositorioNotasCredito(), GeneradorFolios(config.serie_notas_credito), auditoria
         ),
-        notificaciones=ServicioNotificaciones(correo, config),
+        notificaciones=notificaciones,
     )
