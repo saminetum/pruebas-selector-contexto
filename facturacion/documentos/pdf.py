@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from facturacion.config import Configuracion
 from facturacion.modelos import Factura
-from facturacion.servicios.calculos import importe_neto
+from facturacion.servicios.calculos import importe_bruto, importe_neto
 from facturacion.utilidades.dinero import formatear
 from facturacion.utilidades.fechas import formato_iso
 
@@ -25,8 +25,14 @@ def lineas_de_texto(factura: Factura, config: Configuracion) -> list[str]:
         "",
     ]
     for linea in factura.lineas:
+        bruto = importe_bruto(linea)
+        neto = importe_neto(linea)
+        detalle_descuento = ""
+        if linea.descuento:
+            detalle_descuento = f"  Descuento: {formatear(linea.descuento)}"
         lineas.append(
-            f"{linea.cantidad} x {linea.producto.descripcion}  {formatear(importe_neto(linea))}"
+            f"{linea.cantidad} x {linea.producto.descripcion}  Bruto: {formatear(bruto)}"
+            f"{detalle_descuento}  Neto: {formatear(neto)}"
         )
     lineas += [
         "",
