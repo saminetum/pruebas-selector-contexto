@@ -13,12 +13,12 @@ from decimal import Decimal
 from facturacion.errores import ClienteInvalido, PagoRechazado
 from facturacion.modelos import Factura
 from facturacion.servicios.auditoria import RegistroAuditoria
+from facturacion.servicios.clientes import ID_CONSUMIDOR_FINAL
 from facturacion.utilidades.dinero import redondear
 
 PESOS_POR_PUNTO = Decimal("1000")
 VALOR_PUNTO = Decimal("10")
 UMBRAL_CLIENTE_FRECUENTE = 500
-ID_CONSUMIDOR_FINAL = "consumidor-final"
 
 
 class ProgramaPuntos:
