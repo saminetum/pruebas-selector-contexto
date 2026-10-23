@@ -23,6 +23,7 @@ from facturacion.servicios.anulacion import ServicioAnulacion
 from facturacion.servicios.auditoria import RegistroAuditoria
 from facturacion.servicios.clientes import ServicioClientes
 from facturacion.servicios.emision import ServicioEmision
+from facturacion.servicios.fidelizacion import ProgramaPuntos
 from facturacion.servicios.inventario import ServicioInventario
 from facturacion.servicios.notas_credito import ServicioNotasCredito
 from facturacion.servicios.notificaciones import ServicioNotificaciones
@@ -45,6 +46,7 @@ class Aplicacion:
     anulacion: ServicioAnulacion
     notas_credito: ServicioNotasCredito
     notificaciones: ServicioNotificaciones
+    programa_puntos: ProgramaPuntos
 
 
 def construir_aplicacion(
@@ -60,6 +62,7 @@ def construir_aplicacion(
     facturas = RepositorioFacturas()
     auditoria = RegistroAuditoria()
     inventario = ServicioInventario(RepositorioProductos())
+    programa_puntos = ProgramaPuntos(auditoria)
 
     return Aplicacion(
         config=config,
@@ -69,7 +72,7 @@ def construir_aplicacion(
         clientes=ServicioClientes(RepositorioClientes()),
         inventario=inventario,
         emision=ServicioEmision(
-            facturas, GeneradorFolios(config.serie_facturas), inventario, auditoria, config
+            facturas, GeneradorFolios(config.serie_facturas), inventario, auditoria, config, programa_puntos
         ),
         timbrado=ServicioTimbrado(servicio_impuestos, facturas, auditoria, config),
         pagos=ServicioPagos(facturas, auditoria),
@@ -78,4 +81,5 @@ def construir_aplicacion(
             RepositorioNotasCredito(), GeneradorFolios(config.serie_notas_credito), auditoria
         ),
         notificaciones=ServicioNotificaciones(correo, config),
+        programa_puntos=programa_puntos,
     )

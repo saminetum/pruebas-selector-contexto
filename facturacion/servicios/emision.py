@@ -7,16 +7,21 @@ timbra (servicios/timbrado.py).
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from facturacion.config import Configuracion
 from facturacion.errores import EstadoInvalido, FacturaInvalida
 from facturacion.modelos import Cliente, EstadoFactura, Factura, LineaFactura
 from facturacion.repositorios.memoria import RepositorioFacturas
 from facturacion.servicios.auditoria import RegistroAuditoria
-from facturacion.servicios.calculos import calcular_totales
+from facturacion.servicios.calculos import aplicar_descuento_porcentual, calcular_totales
+from facturacion.servicios.fidelizacion import ProgramaPuntos
 from facturacion.servicios.inventario import ServicioInventario
 from facturacion.servicios.numeracion import GeneradorFolios
 from facturacion.utilidades.fechas import ahora
 from facturacion.utilidades.validaciones import validar_cantidad
+
+DESCUENTO_FRECUENTE = Decimal("0.05")
 
 
 class ServicioEmision:
@@ -27,12 +32,19 @@ class ServicioEmision:
         inventario: ServicioInventario,
         auditoria: RegistroAuditoria,
         config: Configuracion,
+        programa_puntos: ProgramaPuntos,
     ) -> None:
         self._facturas = facturas
         self._folios = folios
         self._inventario = inventario
         self._auditoria = auditoria
         self._config = config
+        self._programa_puntos = programa_puntos
+
+    def _aplicar_descuento_frecuente(self, cliente: Cliente, lineas: list[LineaFactura]) -> list[LineaFactura]:
+        if not self._programa_puntos.es_frecuente(cliente.id):
+            return list(lineas)
+        return [aplicar_descuento_porcentual(linea, DESCUENTO_FRECUENTE) for linea in lineas]
 
     def crear_borrador(self, cliente: Cliente, lineas: list[LineaFactura]) -> Factura:
         """Una factura sin folio, con sus totales calculados, para mostrar al cliente."""
@@ -41,7 +53,8 @@ class ServicioEmision:
                 raise FacturaInvalida(
                     f"Cantidad no valida para {linea.producto.codigo}: {linea.cantidad}."
                 )
-        factura = Factura(serie=self._config.serie_facturas, cliente=cliente, lineas=list(lineas))
+        lineas_con_descuento = self._aplicar_descuento_frecuente(cliente, lineas)
+        factura = Factura(serie=self._config.serie_facturas, cliente=cliente, lineas=lineas_con_descuento)
         return calcular_totales(factura)
 
     def emitir(self, borrador: Factura) -> Factura:
