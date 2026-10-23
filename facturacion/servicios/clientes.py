@@ -20,7 +20,9 @@ class ServicioClientes:
         if not nombre_limpio:
             raise ClienteInvalido("El cliente necesita un nombre.")
         if len(nombre_limpio) > MAXIMO_CARACTERES_NOMBRE:
-            raise ClienteInvalido("El nombre del cliente no puede tener mas de 120 caracteres.")
+            raise ClienteInvalido(
+                f"El nombre del cliente no puede tener mas de {MAXIMO_CARACTERES_NOMBRE} caracteres (tiene {len(nombre_limpio)})."
+            )
         if not validar_nit(cliente.nit):
             raise ClienteInvalido(f"El NIT {cliente.nit} no es valido.")
         if cliente.correo and not validar_correo(cliente.correo):
