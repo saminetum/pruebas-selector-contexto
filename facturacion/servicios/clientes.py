@@ -8,6 +8,7 @@ from facturacion.repositorios.memoria import RepositorioClientes
 from facturacion.utilidades.validaciones import NIT_CONSUMIDOR_FINAL, validar_correo, validar_nit
 
 ID_CONSUMIDOR_FINAL = "consumidor-final"
+MAXIMO_NOMBRE_CLIENTE = 120
 
 
 class ServicioClientes:
@@ -15,14 +16,20 @@ class ServicioClientes:
         self._repo = repositorio
 
     def registrar(self, cliente: Cliente) -> Cliente:
-        if not cliente.nombre.strip():
+        nombre_limpio = cliente.nombre.strip()
+        if not nombre_limpio:
             raise ClienteInvalido("El cliente necesita un nombre.")
+        if len(nombre_limpio) > MAXIMO_NOMBRE_CLIENTE:
+            raise ClienteInvalido(
+                f"El nombre del cliente no puede tener mas de {MAXIMO_NOMBRE_CLIENTE} caracteres (tiene {len(nombre_limpio)})."
+            )
         if not validar_nit(cliente.nit):
             raise ClienteInvalido(f"El NIT {cliente.nit} no es valido.")
         if cliente.correo and not validar_correo(cliente.correo):
             raise ClienteInvalido(f"El correo {cliente.correo} no es valido.")
         if self._repo.existe(cliente.id):
             raise ClienteInvalido(f"Ya existe un cliente con id {cliente.id}.")
+        cliente.nombre = nombre_limpio
         self._repo.guardar_cliente(cliente)
         return cliente
 
