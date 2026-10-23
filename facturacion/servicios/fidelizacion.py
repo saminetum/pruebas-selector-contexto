@@ -32,9 +32,7 @@ class ProgramaPuntos:
 
     def es_frecuente(self, cliente_id: str) -> bool:
         """Devuelve True solo para clientes con al menos 500 puntos y no consumidor final."""
-        if cliente_id == ID_CONSUMIDOR_FINAL:
-            return False
-        return self.saldo(cliente_id) >= UMBRAL_CLIENTE_FRECUENTE
+        return cliente_id != ID_CONSUMIDOR_FINAL and self.saldo(cliente_id) >= UMBRAL_CLIENTE_FRECUENTE
 
     def acumular(self, factura: Factura) -> int:
         """Suma los puntos de lo pagado. Una factura acumula una sola vez."""
