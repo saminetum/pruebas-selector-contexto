@@ -1,4 +1,8 @@
-"""Registro y consulta de clientes, con sus datos fiscales validados."""
+"""Registro y consulta de clientes, con sus datos fiscales validados.
+
+El nombre se guarda limpio y con un largo maximo, para que las facturas y los
+reportes se vean bien.
+"""
 
 from __future__ import annotations
 
